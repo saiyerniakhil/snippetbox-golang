@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
+
+	"snippetbox.saiyerniakhil.in/internal/models"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -36,8 +39,18 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		app.clientError(w, http.StatusNotFound)
 	}
 
-	w.Header().Add("Server", "Go")
+	s, err := app.snippets.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			http.NotFound(w, r)
+		} else {
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
 	fmt.Fprintf(w, "Viewing Snippet: %d", id)
+	fmt.Fprintf(w, "%+v", s)
 
 }
 
@@ -46,6 +59,16 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, "Creating Snipper Post")
+
+	title := "0 snail"
+	content := "0 snail\nClim Mount Fuji,\n But slowly, slowly!\n\n - Sai"
+	expires := 7
+
+	id, err := app.snippets.Insert(title, content, expires)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
