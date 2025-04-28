@@ -1,6 +1,26 @@
 {{define "title"}} Home {{end}}
 
 {{define "main"}}
-    <h2>Latest Snippets</h2>
-    <p>There's nothing to see here</p>
+
+<h2>Latest Snippets</h2>
+{{if .SnippetList}}
+<table>
+    <tr>
+        <th>Title</th>
+        <th>Created</th>
+        <th>ID #</th>
+    </tr>
+    <tbody>
+        {{range .SnippetList}}
+        <tr>
+            <td><a href="http://{{.ID}}">{{.Title}}</a></td>
+            <td><time>{{.Created}}</time></td>
+            <td><time>#{{.ID}}</time></td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{else}}
+<p>There's nothing to see here</p>
+{{end}}
 {{end}}

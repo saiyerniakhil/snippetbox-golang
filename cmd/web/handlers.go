@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 
@@ -19,29 +20,32 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, y := range snippets {
-		fmt.Fprintf(w, "%+v\n", y)
+	// for _, y := range snippets {
+	// 	fmt.Fprintf(w, "%+v\n", y)
+	// }
+	data := templateData{
+		SnippetList: snippets,
 	}
 
-	// files := []string{
-	// 	"./ui/html/base.tmpl.html",
-	// 	"./ui/html/partials/nav.tmpl.html",
-	// 	"./ui/html/partials/header.tmpl.html",
-	// 	"./ui/html/partials/footer.tmpl.html",
-	// 	"./ui/html/pages/home.tmpl.html",
-	// }
-	// ts, err := template.ParseFiles(files...)
-	// if err != nil {
-	// 	app.serverError(w, r, err)
-	// 	return
-	// }
-	// err = ts.ExecuteTemplate(w, "base", nil)
-	// if err != nil {
-	// 	app.serverError(w, r, err)
-	// 	return
-	// }
+	files := []string{
+		"./ui/html/base.tmpl.html",
+		"./ui/html/partials/nav.tmpl.html",
+		"./ui/html/partials/header.tmpl.html",
+		"./ui/html/partials/footer.tmpl.html",
+		"./ui/html/pages/home.tmpl.html",
+	}
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
 
-	// fmt.Fprintf(w, "Hello from Snippetbox!")
+	fmt.Fprintf(w, "Hello from Snippetbox!")
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
@@ -60,8 +64,27 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "Viewing Snippet: %d", id)
-	fmt.Fprintf(w, "%+v", s)
+	files := []string{
+		"./ui/html/base.tmpl.html",
+		"./ui/html/partials/nav.tmpl.html",
+		"./ui/html/partials/header.tmpl.html",
+		"./ui/html/partials/footer.tmpl.html",
+		"./ui/html/pages/view.tmpl.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, r, err)
+	}
+
+	data := templateData{
+		Snippet: s,
+	}
+
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, r, err)
+	}
 
 }
 
