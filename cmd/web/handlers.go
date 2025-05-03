@@ -10,6 +10,23 @@ import (
 	"snippetbox.saiyerniakhil.in/internal/models"
 )
 
+func (app *application) render(w http.ResponseWriter, r *http.Request, status int, page string, data templateData) {
+	ts, ok := app.templateCache[page]
+	if !ok {
+		err := fmt.Errorf("the template does not exist", page)
+		app.serverError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(status)
+
+	err := ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, r, err)
+	}
+
+}
+
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Server", "Go")
 
@@ -20,30 +37,9 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// for _, y := range snippets {
-	// 	fmt.Fprintf(w, "%+v\n", y)
-	// }
-	data := templateData{
+	app.render(w, r, http.StatusOK, "home.tmpl.html", templateData{
 		SnippetList: snippets,
-	}
-
-	files := []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-		"./ui/html/partials/header.tmpl.html",
-		"./ui/html/partials/footer.tmpl.html",
-		"./ui/html/pages/home.tmpl.html",
-	}
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
+	})
 
 	fmt.Fprintf(w, "Hello from Snippetbox!")
 }
