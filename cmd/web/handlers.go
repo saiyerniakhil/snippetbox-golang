@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"html/template"
@@ -18,12 +19,17 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, status in
 		return
 	}
 
-	w.WriteHeader(status)
+	buf := new(bytes.Buffer)
 
-	err := ts.ExecuteTemplate(w, "base", data)
+	err := ts.ExecuteTemplate(buf, "base", data)
 	if err != nil {
 		app.serverError(w, r, err)
+		return
 	}
+
+	buf.WriteTo(w)
+
+	w.WriteHeader(status)
 
 }
 
@@ -41,7 +47,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		SnippetList: snippets,
 	})
 
-	fmt.Fprintf(w, "Hello from Snippetbox!")
+	// fmt.Fprintf(w, "Hello from Snippetbox!")
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
