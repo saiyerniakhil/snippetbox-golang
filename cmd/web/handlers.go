@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode/utf8"
 
 	"snippetbox.saiyerniakhil.in/internal/models"
 )
@@ -73,14 +75,52 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Creating Snippet")
+	data := app.newTemplateData(r)
+
+	app.render(w, r, http.StatusOK, "create.tmpl.html", data)
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 
-	title := "0 snail"
-	content := "0 snail\nClim Mount Fuji,\n But slowly, slowly!\n\n - Sai"
-	expires := 7
+	// parse the form
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	title := r.PostForm.Get("title")
+
+	content := r.PostForm.Get("content")
+
+	fieldErrors := make(map[string]string)
+
+	//validate title
+	if strings.TrimSpace(title) == "" {
+		fieldErrors["title"] = "This field cannot be blank"
+	} else if utf8.RuneCountInString(title) > 100 {
+		fieldErrors["title"] = fieldErrors["title"] + ", This field cannot be more more than 100 characters long"
+	}
+
+	// validate content
+	if strings.TrimSpace(content) == "" {
+		fieldErrors["content"] = "This field cannot be blank"
+	}
+
+	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	//validate expires field
+	if expires != 7 && expires != 1 && expires != 365 {
+		fieldErrors["expires"] = "This field must be equal to either of 1, 7 or 365"
+	}
+
+	if len(fieldErrors) > 0 {
+		fmt.Fprint(w, fieldErrors)
+	}
 
 	id, err := app.snippets.Insert(title, content, expires)
 	if err != nil {
