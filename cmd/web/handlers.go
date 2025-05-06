@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 
@@ -34,7 +33,6 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, status in
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Server", "Go")
 
 	snippets, err := app.snippets.Latest()
 
@@ -43,9 +41,10 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.render(w, r, http.StatusOK, "home.tmpl.html", templateData{
-		SnippetList: snippets,
-	})
+	data := app.newTemplateData(r)
+	data.SnippetList = snippets
+
+	app.render(w, r, http.StatusOK, "home.tmpl.html", data)
 
 	// fmt.Fprintf(w, "Hello from Snippetbox!")
 }
@@ -66,28 +65,11 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files := []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-		"./ui/html/partials/header.tmpl.html",
-		"./ui/html/partials/footer.tmpl.html",
-		"./ui/html/pages/view.tmpl.html",
-	}
+	data := app.newTemplateData(r)
 
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, r, err)
-	}
+	data.Snippet = s
 
-	data := templateData{
-		Snippet: s,
-	}
-
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, r, err)
-	}
-
+	app.render(w, r, http.StatusOK, "view.tmpl.html", data)
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
