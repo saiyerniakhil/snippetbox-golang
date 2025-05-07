@@ -12,10 +12,10 @@ import (
 )
 
 type snippetCreateForm struct {
-	Title   string
-	Content string
-	Expires int
-	validator.Validator
+	Title               string `form:"title"`
+	Content             string `form:"content"`
+	Expires             int    `form:"expires"`
+	validator.Validator `form:"-"`
 }
 
 func (app *application) render(w http.ResponseWriter, r *http.Request, status int, page string, data templateData) {
@@ -99,16 +99,12 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	var formData snippetCreateForm
+
+	err = app.decodePostForm(r, &formData)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
-	}
-
-	formData := snippetCreateForm{
-		Title:   r.PostForm.Get("title"),
-		Content: r.PostForm.Get("content"),
-		Expires: expires,
 	}
 
 	formData.CheckField(validator.NotBlank(formData.Title), "title", "This field cannot be blank")
@@ -116,10 +112,11 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	formData.CheckField(validator.MaxChars(formData.Title, 100), "title", "This field cannot more than 100 chars")
 	formData.CheckField(validator.PermitteddValue(formData.Expires, 1, 7, 365), "content", "This field cannot anything other than 1, 7 and 365")
 
-	if len(formData.FieldErrors) > 0 {
+	if !formData.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = formData
 		app.render(w, r, http.StatusUnprocessableEntity, "create.tmpl.html", data)
+		return
 	}
 
 	id, err := app.snippets.Insert(formData.Title, formData.Content, formData.Expires)
