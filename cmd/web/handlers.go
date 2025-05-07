@@ -8,13 +8,14 @@ import (
 	"strconv"
 
 	"snippetbox.saiyerniakhil.in/internal/models"
+	"snippetbox.saiyerniakhil.in/internal/validator"
 )
 
 type snippetCreateForm struct {
-	Title       string
-	Content     string
-	Expires     int
-	FieldErrors map[string]string
+	Title   string
+	Content string
+	Expires int
+	validator.Validator
 }
 
 func (app *application) render(w http.ResponseWriter, r *http.Request, status int, page string, data templateData) {
@@ -110,7 +111,10 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		Expires: expires,
 	}
 
-	formData.validateForm()
+	formData.CheckField(validator.NotBlank(formData.Title), "title", "This field cannot be blank")
+	formData.CheckField(validator.NotBlank(formData.Content), "content", "This field cannot be blank")
+	formData.CheckField(validator.MaxChars(formData.Title, 100), "title", "This field cannot more than 100 chars")
+	formData.CheckField(validator.PermitteddValue(formData.Expires, 1, 7, 365), "content", "This field cannot anything other than 1, 7 and 365")
 
 	if len(formData.FieldErrors) > 0 {
 		data := app.newTemplateData(r)

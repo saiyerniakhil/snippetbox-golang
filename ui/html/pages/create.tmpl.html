@@ -22,8 +22,8 @@
             <label class="error">{{.}}</label>
         {{end}}
         <input type='radio' name='expires' value='365' {{if (eq .Form.Expires 365)}}checked{{end}}> One Year
-        <input type='radio' name='expires' value='7' {{if (eq .Form.Expires 365)}}checked{{end}}> One Week
-        <input type='radio' name='expires' value='1' {{if (eq .Form.Expires 365)}}checked{{end}}> One Day
+        <input type='radio' name='expires' value='7' {{if (eq .Form.Expires 7)}}checked{{end}}> One Week
+        <input type='radio' name='expires' value='1' {{if (eq .Form.Expires 1)}}checked{{end}}> One Day
     </div>
     <div>
         <input type='submit' value='Publish snippet'>
