@@ -1,0 +1,47 @@
+{{define "title"}} Signup {{end}}
+
+{{define "main"}}
+<form action="/user/signup" method="POST" novalidate>
+    <label style="display: block" for="name">
+        Name:
+
+    </label>
+    <div>
+        {{with .Form.FieldErrors.name}}
+        <label class="error">{{.}}</label>
+        {{end}}
+        <input type="text" name="name" value="{{.Form.Name}}">
+    </div>
+
+
+    <label style="display: block" for="email">
+        Email:
+
+    </label>
+    <div>
+        {{with .Form.FieldErrors.email}}
+        <label class="error">{{.}}</label>
+        {{end}}
+        <input type="email" name="email" value="{{.Form.Email}}">
+    </div>
+
+
+
+    <label style="display: block" for="password">
+        Password:
+
+    </label>
+    <div>
+        {{with .Form.FieldErrors.password}}
+        <label class="error">{{.}}</label>
+        {{end}}
+        <input type="password" name="password">
+    </div>
+
+
+    <input type="submit" value="Signup">
+
+
+</form>
+
+{{end}}

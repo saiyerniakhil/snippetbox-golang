@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"regexp"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -9,6 +10,8 @@ import (
 type Validator struct {
 	FieldErrors map[string]string
 }
+
+var EmailRX = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
 
 func (v *Validator) Valid() bool {
 	return len(v.FieldErrors) == 0
@@ -40,4 +43,9 @@ func MaxChars(value string, n int) bool {
 
 func PermitteddValue[T comparable](value T, permittedValues ...T) bool {
 	return slices.Contains(permittedValues, value)
+}
+
+func Matches(value string, pattern string) bool {
+	matched, _ := regexp.MatchString(pattern, value)
+	return matched
 }
