@@ -32,7 +32,7 @@ type userLoginForm struct {
 func (app *application) render(w http.ResponseWriter, r *http.Request, status int, page string, data templateData) {
 	ts, ok := app.templateCache[page]
 	if !ok {
-		err := fmt.Errorf("the template does not exist", page)
+		err := fmt.Errorf("the template does not exist: %s", page)
 		app.serverError(w, r, err)
 		return
 	}
@@ -245,4 +245,9 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
 	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func ping(w http.ResponseWriter, r *http.Request) {
+
+	w.Write([]byte("pong"))
 }
