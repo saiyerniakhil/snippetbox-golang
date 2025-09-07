@@ -14,6 +14,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
+	database "snippetbox.saiyerniakhil.in/internal/db"
 	"snippetbox.saiyerniakhil.in/internal/models"
 )
 
@@ -57,8 +58,8 @@ func main() {
 
 	app := &application{
 		logger:         logger,
-		snippets:       &models.SnippetModel{DB: db},
-		users:          &models.UserModel{DB: db},
+		snippets:       &models.SnippetModel{Queries: database.New(db)},
+		users:          &models.UserModel{Queries: database.New(db)},
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,

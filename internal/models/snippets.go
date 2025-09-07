@@ -1,9 +1,12 @@
 package models
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"time"
+
+	db "snippetbox.saiyerniakhil.in/internal/db"
 )
 
 type Snippet struct {
@@ -15,7 +18,7 @@ type Snippet struct {
 }
 
 type SnippetModel struct {
-	DB *sql.DB
+	Queries *db.Queries
 }
 
 const (
@@ -24,9 +27,11 @@ const (
 
 func (m *SnippetModel) Insert(title string, content string, expires int) (int, error) {
 	// used placeholders instead of string interpolation to avoid SQL injection.
-	stmt := `INSERT INTO snippets (title, content, created, expires)
-	VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`
-	result, err := m.DB.Exec(stmt, title, content, expires)
+	result, err := m.Queries.AddSnippet(context.TODO(), db.AddSnippetParams{
+		Title:   title,
+		Content: content,
+		Expires: time.Now().AddDate(0, 0, expires),
+	})
 	if err != nil {
 		return 0, err
 	}
@@ -38,11 +43,7 @@ func (m *SnippetModel) Insert(title string, content string, expires int) (int, e
 }
 
 func (m *SnippetModel) Get(id int) (Snippet, error) {
-	stmt := `SELECT id, title, content, created, expires FROM snippets WHERE expires > UTC_TIMESTAMP() and id = ?`
-	row := m.DB.QueryRow(stmt, id)
-
-	var s Snippet
-	err := row.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	row, err := m.Queries.GetSnippetById(context.TODO(), int32(id))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Snippet{}, ErrNoRecord
@@ -50,36 +51,33 @@ func (m *SnippetModel) Get(id int) (Snippet, error) {
 			return Snippet{}, err
 		}
 	}
-	return s, nil
+	return Snippet{
+		ID:      int(row.ID),
+		Title:   row.Title,
+		Content: row.Content,
+		Created: row.Created,
+		Expires: row.Expires,
+	}, nil
 }
 
 func (m *SnippetModel) Latest() ([]Snippet, error) {
 
-	stmt := `SELECT id, title, content, created, expires from snippets WHERE expires > UTC_TIMESTAMP () order by id DESC LIMIT ?`
-
-	rows, err := m.DB.Query(stmt, LIMIT)
+	rows, err := m.Queries.GetLatestSnippets(context.TODO(), LIMIT)
 	if err != nil {
 		return nil, err
 	}
 
-	defer rows.Close()
-
 	var snippets []Snippet
 
-	for rows.Next() {
+	for _, row := range rows {
 
-		var s Snippet
-
-		err := rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
-		if err != nil {
-			return nil, err
-		}
-
-		snippets = append(snippets, s)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
+		snippets = append(snippets, Snippet{
+			ID:      int(row.ID),
+			Title:   row.Title,
+			Content: row.Content,
+			Created: row.Created,
+			Expires: row.Expires,
+		})
 	}
 
 	return snippets, nil

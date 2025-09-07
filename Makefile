@@ -11,5 +11,8 @@ start-delve:
 build-debug: clean
 	CGO_ENABLED=0 go build -gcflags=all="-N -l" -o bin/$(BINARY_NAME)-debug ./cmd/web/
 
+codegen:
+	sqlc generate .
+
 start:
 	$(GOPATH)/bin/air

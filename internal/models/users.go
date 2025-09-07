@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/bcrypt"
+	db "snippetbox.saiyerniakhil.in/internal/db"
 )
 
 type User struct {
@@ -19,7 +21,7 @@ type User struct {
 }
 
 type UserModel struct {
-	DB *sql.DB
+	Queries *db.Queries
 }
 
 func (m *UserModel) Insert(name, email, password string) error {
@@ -28,9 +30,11 @@ func (m *UserModel) Insert(name, email, password string) error {
 		return err
 	}
 
-	stmt := `INSERT INTO users (name, email, hashed_password, created) VALUES(?, ?, ?, UTC_TIMESTAMP())`
-
-	_, err = m.DB.Exec(stmt, name, email, string(hashedPassword))
+	_, err = m.Queries.AddUser(context.TODO(), db.AddUserParams{
+		Name:           name,
+		Email:          email,
+		HashedPassword: string(hashedPassword),
+	})
 	if err != nil {
 		var mySqlError *mysql.MySQLError
 		if errors.As(err, &mySqlError) {
@@ -45,11 +49,9 @@ func (m *UserModel) Insert(name, email, password string) error {
 
 func (m *UserModel) Authenticate(email, password string) (int, error) {
 	var id int
-	var hashedPassword []byte
 
-	stmt := "SELECT id, hashed_password FROM users WHERE email = ?"
+	result, err := m.Queries.AuthenticateUser(context.TODO(), email)
 
-	err := m.DB.QueryRow(stmt, email).Scan(&id, &hashedPassword)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, ErrInvalidCredentials
@@ -58,7 +60,7 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 		}
 	}
 
-	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(result.HashedPassword), []byte(password))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return 0, ErrInvalidCredentials
@@ -73,7 +75,6 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 func (m *UserModel) Exists(id int) (bool, error) {
 	var exists bool
 
-	stmt := "SELECT EXISTS(SELECT true FROM users WHERE id = ?)"
-	err := m.DB.QueryRow(stmt, id).Scan(&exists)
+	exists, err := m.Queries.UserExists(context.TODO(), int32(id))
 	return exists, err
 }
